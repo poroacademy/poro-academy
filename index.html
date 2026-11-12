@@ -71,7 +71,7 @@ home:['হোম','Home'],courses:['কোর্স','Courses'],school:['স্�
 search:['কোর্স, নোট বা কুইজ খুঁজুন…','Search courses, notes, quizzes…'],feat:['ফিচার্ড কোর্স','Featured courses'],cats:['ক্যাটাগরি','Categories'],
 live:['আসন্ন লাইভ ক্লাস','Upcoming live classes'],notes:['সর্বশেষ নোট ও কুইজ','Latest notes & quizzes'],succ:['সাফল্যের গল্প','Success stories'],
 all:['সব','All'],enroll:['এনরোল করুন','Enroll now'],add:['কার্টে যোগ করুন','Add to cart'],free:['ফ্রি','Free'],more:['সব দেখুন','See all'],
-empty:['কার্ট খালি আছে','Your cart is empty'],coupon:['কুপন কোড','Coupon code'],apply:['প্রয়োগ','Apply'],total:['মোট','Total'],pay:['পেমেন্ট করুন (bKash / Nagad / SSLCommerz)','Pay (bKash / Nagad / SSLCommerz)'],
+empty:['কার্ট খালি আছে','Your cart is empty'],coupon:['কুপন কোড','Coupon code'],apply:['প্রয়োগ','Apply'],total:['মোট','Total'],pay:['পেমেন্ট করুন (bKash / Nagad)','Pay (bKash / Nagad)'],
 ask:['PORO AI-কে জিজ্ঞাসা করুন','Ask PORO AI'],aiph:['প্রশ্ন লিখুন…','Type your question…'],send:['পাঠান','Send'],
 syl:['কারিকুলাম','Curriculum'],lessons:['টি ক্লাস','lessons'],motto:['শিখো • অনুশীলন • পরীক্ষা • উন্নতি','Learn • Practice • Test • Improve'],
 subj:['বিষয়সমূহ','Subjects'],hw:['হোমওয়ার্ক','Homework'],ct:['ক্লাস টেস্ট','Class test'],dark:['ডার্ক মোড','Dark mode'],lang:['ভাষা: বাংলা / English','Language: বাংলা / English']
@@ -107,9 +107,8 @@ return hdr()+'<div class="pad">'+cls.map(function(c){return '<div class="card"><
 function sub(){var s=0;cart.forEach(function(c){s+=c.p});return s}
 function cartV(){
 if(!cart.length)return hdr()+'<div class="pad" style="text-align:center;padding-top:60px;color:var(--mut)"><div style="font-size:56px">🛒</div>'+t('empty')+'</div>';
-var s=sub(),d=Math.round(s*coupon);
+var s=sub(),d=0;
 return hdr()+'<div class="pad">'+cart.map(function(c){return '<div class="card row"><div><b>'+ln(c.t)+'</b><br><span class="price">'+money(c.p)+'</span></div><button class="tag" data-a="rm" data-id="'+c.id+'">✕</button></div>'}).join('')+
-'<div class="cin"><input id="cp" placeholder="'+t('coupon')+' (PORO10)"><button class="btn o" style="width:auto" data-a="cpn">'+t('apply')+'</button></div>'+
 '<div class="card" style="margin-top:12px">'+(d?'<div class="row"><span>'+(L=='bn'?'ছাড়':'Discount')+'</span><span>-'+money(d)+'</span></div>':'')+'<div class="row"><b>'+t('total')+'</b><b class="price">'+money(s-d)+'</b></div></div><button class="btn" data-a="pay">'+t('pay')+'</button></div>'}
 function menu(){
 var it=[['🤖',ask0(),'ai'],['📊',L=='bn'?'আমার ড্যাশবোর্ড':'My dashboard','dash'],['🔖',L=='bn'?'বুকমার্ক ও নোট':'Bookmarks & notes','x'],['🏅',L=='bn'?'সার্টিফিকেট':'Certificates','x'],['📝',L=='bn'?'পরীক্ষা ও ফলাফল':'Exams & results','x'],['🎧',L=='bn'?'সাহায্য ও সাপোর্ট':'Help & support','x'],['ℹ️',L=='bn'?'আমাদের সম্পর্কে':'About us','x']];
@@ -143,10 +142,10 @@ if(a=='tab'){tab=el.dataset.v;closeS();render();scrollTo(0,0)}
 else if(a=='cat'){cat=el.dataset.i=='all'?'all':+el.dataset.i;tab='courses';render()}
 else if(a=='course')course(el.dataset.id)
 else if(a=='addc'){var c=CR.filter(function(x){return x.id==el.dataset.id})[0];if(!cart.some(function(x){return x.id==c.id}))cart.push(c);closeS();render();toast(L=='bn'?'কার্টে যোগ হয়েছে':'Added to cart')}
-else if(a=='enr'){closeS();toast(L=='bn'?'এনরোল সম্পন্ন (ডেমো)':'Enrolled (demo)')}
+else if(a=='enr'){closeS();toast(L=='bn'?'এটি ফ্রি কোর্স, সরাসরি ক্লাস দেখুন':'This course is free, open any lesson')}
 else if(a=='rm'){cart=cart.filter(function(x){return x.id!=el.dataset.id});render()}
 else if(a=='cpn'){var v=document.getElementById('cp').value.trim().toUpperCase();if(v=='PORO10'){coupon=.1;render();toast('PORO10 −10%')}else toast(L=='bn'?'অবৈধ কুপন':'Invalid coupon')}
-else if(a=='pay'){if(user)toast(L=='bn'?'পেমেন্ট ব্যবস্থা পরবর্তী ধাপে যুক্ত হবে':'Payment is added in a later phase');else authSheet('in')}
+else if(a=='pay')paySheet()
 else if(a=='toast')toast(el.dataset.m)
 else if(a=='ai')aiSheet()
 else if(a=='send')send()
@@ -165,7 +164,7 @@ function inp(id,type,ph,v){return '<input class="fi" id="'+id+'" type="'+type+'"
 function profCard(){
 if(!user)return '<div class="card"><b>'+x('স্বাগতম!','Welcome!')+'</b><small style="display:block;color:var(--mut);margin:2px 0 10px">'+x('কোর্স কিনতে ও অগ্রগতি সংরক্ষণ করতে লগইন করুন','Log in to buy courses and save your progress')+'</small><button class="btn" data-a="authm" data-mode="in">'+x('লগইন / রেজিস্ট্রেশন','Login / Register')+'</button></div>';
 var nm=(prof&&prof.full_name)||user.email;
-return '<div class="card live"><div class="logo" style="width:52px;height:52px;font-size:24px">'+esc(nm.charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><b>'+esc(nm)+'</b><br><small style="color:var(--mut)">'+esc(user.email)+'</small></div><button class="tag" data-a="prof">✏️</button></div>'+(isStaff()?'<button class="mi" data-a="adm"><span>⚙️</span><span>'+x('অ্যাডমিন প্যানেল','Admin panel')+'</span><span>›</span></button>':'')+'<button class="mi" data-a="logout"><span>🚪</span><span>'+x('লগআউট','Logout')+'</span><span>›</span></button>'}
+return '<div class="card live"><div class="logo" style="width:52px;height:52px;font-size:24px">'+esc(nm.charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><b>'+esc(nm)+'</b><br><small style="color:var(--mut)">'+esc(user.email)+'</small></div><button class="tag" data-a="prof">✏️</button></div>'+'<button class="mi" data-a="mycourses"><span>📚</span><span>'+x('আমার কোর্স','My courses')+'</span><span>›</span></button><button class="mi" data-a="mypay"><span>💳</span><span>'+x('আমার পেমেন্ট','My payments')+'</span><span>›</span></button>'+(isStaff()?'<button class="mi" data-a="adm"><span>⚙️</span><span>'+x('অ্যাডমিন প্যানেল','Admin panel')+'</span><span>›</span></button>':'')+'<button class="mi" data-a="logout"><span>🚪</span><span>'+x('লগআউট','Logout')+'</span><span>›</span></button>'}
 function authSheet(m){
 var ti={in:x('লগইন','Login'),up:x('রেজিস্ট্রেশন','Register'),fg:x('পাসওয়ার্ড রিসেট','Reset password')};
 sheet('<h2 style="margin-top:0">'+ti[m]+'</h2>'+(m=='up'?inp('an','text',x('পুরো নাম','Full name')):'')+inp('ae','email',x('ইমেইল','Email'))+(m!='fg'?inp('ap','password',x('পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)','Password (min 6 characters)')):'')+
@@ -213,11 +212,11 @@ sb.from('progress').select('lesson_id').eq('completed',true).then(function(r){do
 function course(id){var c=CR.find(function(q){return q.id==id});if(!c)return;var g=COL[c.id%5].split(','),ac=hasAcc(c),ic=cart.some(function(q){return q.id==id});
 var body=(c.chs||[]).map(function(h,i){var ls=h.lessons||[];return '<div class="card"><b>'+n(i+1)+'. '+esc(h.title)+'</b>'+(ls.length?ls.map(function(l){return '<div class="les" data-a="play" data-id="'+l.id+'"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><span>'+(done[l.id]?'✅':'')+'</span></div>'}).join(''):'<div class="les"><small style="color:var(--mut)">'+(ac?x('ক্লাস শীঘ্রই আসছে','Lessons coming soon'):x('🔒 এনরোল করলে ক্লাস দেখা যাবে','🔒 Enroll to unlock lessons'))+'</small></div>')+'</div>'}).join('');
 sheet('<div class="cv" style="border-radius:16px;'+bg(c,g)+'">'+(c.img?'':esc(ln(c.t)))+'</div><h2 style="margin:12px 0 2px">'+esc(ln(c.t))+'</h2><small style="color:var(--mut)">👨‍🏫 '+esc(ln(c.i))+' • '+n(c.l)+' '+t('lessons')+' • '+n(c.h)+x(' ঘণ্টা',' hrs')+'</small><p style="font-size:14px;margin:8px 0">'+esc(c.desc)+'</p><h2 style="margin:10px 0 4px">'+t('syl')+'</h2>'+body+
-'<button class="btn" data-a="'+(c.p&&ac?'none':c.p?'addc':'enr')+'" data-id="'+c.id+'">'+(c.p?(ac?'✓ '+x('এনরোল করা আছে','Enrolled'):(ic?'✓ ':'')+t('add')+' • '+money(c.p)):t('enroll'))+'</button>')}
+(c.p&&!ac&&pendFor(c.id)?'<button class="btn o" data-a="mypay">⏳ '+x('পেমেন্ট যাচাই হচ্ছে','Payment under review')+'</button>':'<button class="btn" data-a="'+(c.p&&ac?'none':c.p?'addc':'enr')+'" data-id="'+c.id+'">'+(c.p?(ac?'✓ '+x('এনরোল করা আছে','Enrolled'):(ic?'✓ ':'')+t('add')+' • '+money(c.p)):t('enroll'))+'</button>'))}
 function play(id){var l=LS[id];if(!l)return;sheet('<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/'+esc(l.youtube_id)+'?rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><h2 style="margin:12px 0 4px">'+esc(l.title)+'</h2><p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(l.description)+'</p><button class="btn" data-a="done" data-id="'+id+'">'+(done[id]?'✅ ':'✓ ')+x('ক্লাস সম্পন্ন','Mark as completed')+'</button>')}
-function adLoad(cb){sb.from('courses').select('*,chapters(*,lessons(*))').order('id').then(function(r){AD=r.data||[];cb()})}
-function adShow(){var c=AD.find(function(q){return q.id==ADV.cid})||{},h,chs=(c.chapters||[]).slice().sort(srt);
-if(ADV.v=='list')h='<h2 style="margin-top:0">⚙️ কোর্স ম্যানেজমেন্ট</h2><button class="btn" data-a="adedit" data-id="0">+ নতুন কোর্স</button><div style="height:10px"></div>'+AD.map(function(k){return '<div class="card row"><div style="min-width:0"><b>'+esc(k.title_bn||k.title_en)+'</b><br><small>'+(k.published?'🟢 Published':'⚪ Draft')+' • ৳'+k.price+'</small></div><button class="tag" data-a="adopen" data-id="'+k.id+'">খুলুন</button></div>'}).join('');
+function adLoad(cb){Promise.all([sb.from('courses').select('*,chapters(*,lessons(*))').order('id'),sb.from('payments').select('*,profiles(full_name,phone),courses(title_bn,price)').order('created_at',{ascending:false}).limit(200)]).then(function(r){AD=r[0].data||[];ADP=r[1].data||[];cb()})}
+function adShow(){if(ADV.v=='pay')return sheet(adPayH());var c=AD.find(function(q){return q.id==ADV.cid})||{},h,chs=(c.chapters||[]).slice().sort(srt);
+if(ADV.v=='list')h='<h2 style="margin-top:0">⚙️ অ্যাডমিন প্যানেল</h2><button class="btn o" data-a="adpay">💳 পেমেন্ট যাচাই'+(adPend()?' ('+n(adPend())+' টি অপেক্ষমাণ)':'')+'</button><h2>📚 কোর্স ম্যানেজমেন্ট</h2><button class="btn" data-a="adedit" data-id="0">+ নতুন কোর্স</button><div style="height:10px"></div>'+AD.map(function(k){return '<div class="card row"><div style="min-width:0"><b>'+esc(k.title_bn||k.title_en)+'</b><br><small>'+(k.published?'🟢 Published':'⚪ Draft')+' • ৳'+k.price+'</small></div><button class="tag" data-a="adopen" data-id="'+k.id+'">খুলুন</button></div>'}).join('');
 else if(ADV.v=='edit')h='<h2 style="margin-top:0">'+(ADV.cid?'কোর্স এডিট':'নতুন কোর্স')+'</h2>'+inp('tb','text','কোর্সের নাম (বাংলা)',c.title_bn)+inp('te','text','Course title (English)',c.title_en)+'<select class="fi" id="cat">'+CATS.map(function(k,i){return '<option value="'+(i+1)+'"'+(c.category_id==i+1?' selected':'')+'>'+k[1]+'</option>'}).join('')+'</select>'+inp('pr','number','দাম (টাকা, ফ্রি হলে ০)',c.price)+inp('ins','text','শিক্ষকের নাম',c.instructor_name)+inp('ll','text','মোট ক্লাস (যেমন ৬০+)',c.lessons_label)+inp('hl','text','মোট ঘণ্টা (যেমন ১০০+)',c.hours_label)+inp('cv','text','কভার ছবির লিংক',c.cover_url)+inp('ds','text','কোর্সের বিবরণ',c.description)+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="pb"'+(c.published?' checked':'')+'> প্রকাশিত (Published)</label><button class="btn" data-a="adsave">সংরক্ষণ করুন</button>'+(ADV.cid?'<button class="btn o" style="margin-top:8px;color:#dc2626" data-a="adcdel">কোর্স মুছুন</button>':'')+'<p><button class="tag" data-a="adback">← ফিরে যান</button></p>';
 else h='<h2 style="margin-top:0">'+esc(c.title_bn)+'</h2><div class="row" style="margin-bottom:10px"><button class="tag" data-a="adback">← সব কোর্স</button><button class="tag" data-a="adedit" data-id="'+c.id+'">✏️ কোর্স এডিট</button></div>'+chs.map(function(ch){return '<div class="card"><div class="row"><b>'+esc(ch.title)+'</b><button class="tag" data-a="adchdel" data-id="'+ch.id+'">✕</button></div>'+(ch.lessons||[]).slice().sort(srt).map(function(l){return '<div class="les"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><button class="tag" data-a="adldel" data-id="'+l.id+'">✕</button></div>'}).join('')+'</div>'}).join('')+'<div class="card"><b>+ নতুন অধ্যায়</b>'+inp('cn','text','অধ্যায়ের নাম')+'<button class="btn o" data-a="adch">অধ্যায় যোগ করুন</button></div>'+(chs.length?'<div class="card"><b>+ নতুন ভিডিও ক্লাস</b><select class="fi" id="lc">'+chs.map(function(ch){return '<option value="'+ch.id+'">'+esc(ch.title)+'</option>'}).join('')+'</select>'+inp('lt','text','ক্লাসের নাম')+inp('ly','text','YouTube লিংক')+inp('ld','text','বিবরণ (ঐচ্ছিক)')+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="lp"> ফ্রি প্রিভিউ</label><button class="btn" data-a="adl">ক্লাস যোগ করুন</button></div>':'');
 sheet(h)}
@@ -241,6 +240,64 @@ else if(a=='adl'){var yt=ytId(v('ly')),ch=+v('lc');if(!v('lt'))return toast('ক
 sb.from('lessons').insert({chapter_id:ch,title:v('lt'),youtube_id:yt,description:v('ld'),is_preview:document.getElementById('lp').checked,sort:(cc.lessons||[]).length+1}).then(ok())}
 else if(a=='adldel'){if(confirm('ক্লাসটি মুছবেন?'))sb.from('lessons').delete().eq('id',id).then(ok())}
 });
+/* ===== PHASE 4: manual bKash/Nagad payment, my courses, payment verification ===== */
+var PAY={bkash:'01838824602',nagad:'01838824602'},PM='bkash',MYP=[],ADP=[];
+var PMN={bkash:'bKash',nagad:'Nagad'},PMC={bkash:'#e2136e',nagad:'#f6921e'};
+function en(s){return String(s||'').replace(/[০-৯]/g,function(d){return '০১২৩৪৫৬৭৮৯'.indexOf(d)})}
+function pendFor(cid){return MYP.some(function(p){return p.course_id==cid&&p.status=='pending'})}
+function adPend(){return ADP.filter(function(p){return p.status=='pending'}).length}
+function fdate(d){try{return new Date(d).toLocaleString(L=='bn'?'bn-BD':'en-GB',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}catch(e){return ''}}
+function stH(s){return s=='verified'?'<span class="tag">✅ '+x('যাচাইকৃত','Verified')+'</span>':s=='rejected'?'<span class="tag" style="background:#fee2e2;color:#dc2626">❌ '+x('বাতিল','Rejected')+'</span>':'<span class="tag" style="background:#fef3c7;color:#b45309">⏳ '+x('যাচাই হচ্ছে','Pending')+'</span>'}
+function payLoad(){if(!sb)return;
+sb.from('settings').select('*').then(function(r){(r.data||[]).forEach(function(s){if(PAY.hasOwnProperty(s.key)&&s.value)PAY[s.key]=s.value})});
+if(!user){MYP=[];return}
+sb.from('payments').select('*,courses(title_bn,title_en)').eq('user_id',user.id).order('created_at',{ascending:false}).then(function(r){MYP=r.data||[];render()})}
+var _la3=loadAll;loadAll=function(){_la3();payLoad()};
+function payItems(){return cart.filter(function(c){return c.p&&!enr[c.id]&&!pendFor(c.id)})}
+function paySheet(keep){if(!user){toast(x('পেমেন্টের আগে লগইন করুন','Please log in first'));return authSheet('in')}
+var it=payItems();if(!it.length){toast(x('এই কোর্সগুলো আগেই কেনা বা যাচাইয়ের অপেক্ষায় আছে','These courses are already bought or under review'));return}
+var tot=0;it.forEach(function(c){tot+=c.p});keep=keep||{};
+sheet('<h2 style="margin-top:0">💳 '+x('পেমেন্ট করুন','Make payment')+'</h2>'+
+'<div class="chips">'+['bkash','nagad'].map(function(m){return '<button class="chip'+(PM==m?' on':'')+'" style="'+(PM==m?'background:'+PMC[m]:'')+'" data-a="pm" data-v="'+m+'">'+PMN[m]+'</button>'}).join('')+'</div>'+
+'<div class="card" style="border-left:4px solid '+PMC[PM]+'"><b>'+x('যেভাবে পেমেন্ট করবেন','How to pay')+'</b><ol style="padding-left:20px;margin-top:6px;font-size:14px;line-height:1.7">'+
+'<li>'+x('আপনার '+PMN[PM]+' অ্যাপ বা '+(PM=='bkash'?'*247#':'*167#')+' থেকে <b>Send Money</b> করুন','Use <b>Send Money</b> in your '+PMN[PM]+' app')+'</li>'+
+'<li>'+x('নম্বর','Number')+': <b style="font-size:17px;letter-spacing:.5px">'+esc(PAY[PM])+'</b> <button class="tag" data-a="cpy" data-v="'+esc(PAY[PM])+'">'+x('কপি','Copy')+'</button> <small>(Personal)</small></li>'+
+'<li>'+x('পরিমাণ','Amount')+': <b class="price">'+money(tot)+'</b></li>'+
+'<li>'+x('টাকা পাঠানোর পর SMS-এ যে <b>TrxID</b> আসবে, নিচে লিখুন','Enter the <b>TrxID</b> from the confirmation SMS below')+'</li></ol></div>'+
+it.map(function(c){return '<div class="row" style="font-size:14px"><span>'+esc(ln(c.t))+'</span><span>'+money(c.p)+'</span></div>'}).join('')+'<div style="height:10px"></div>'+
+inp('ps','tel',x('যে নম্বর থেকে টাকা পাঠিয়েছেন (01XXXXXXXXX)','Number you paid from (01XXXXXXXXX)'),keep.ps)+inp('pt','text',x('TrxID (যেমন: 9C7A2B1XQK)','TrxID (e.g. 9C7A2B1XQK)'),keep.pt)+
+'<p id="am" style="font-size:13px;min-height:18px"></p><button class="btn" id="ab" data-a="paysub">'+x('পেমেন্ট জমা দিন','Submit payment')+'</button><p style="font-size:12px;color:var(--mut);margin-top:8px">'+x('অ্যাডমিন যাচাই করলে কোর্সটি আপনার "আমার কোর্স"-এ চালু হয়ে যাবে। সাধারণত কয়েক ঘণ্টার মধ্যে।','Your course unlocks under "My courses" once an admin verifies the payment, usually within a few hours.')+'</p>')}
+function myCourses(){var l=CR.filter(function(c){return enr[c.id]});
+sheet('<h2 style="margin-top:0">📚 '+x('আমার কোর্স','My courses')+'</h2><div class="list">'+(l.length?l.map(cardH).join(''):'<p style="color:var(--mut);text-align:center;padding:24px">'+x('এখনো কোনো কোর্সে এনরোল করেননি','You have not enrolled in any course yet')+'</p><button class="btn" data-a="tab" data-v="courses">'+x('কোর্স দেখুন','Browse courses')+'</button>')+'</div>')}
+function myPay(){sheet('<h2 style="margin-top:0">💳 '+x('আমার পেমেন্ট','My payments')+'</h2>'+(MYP.length?MYP.map(function(p){var co=p.courses||{};return '<div class="card"><div class="row" style="margin:0"><b>'+esc(L=='bn'?co.title_bn:(co.title_en||co.title_bn))+'</b>'+stH(p.status)+'</div><small style="color:var(--mut)">'+(PMN[p.method]||p.method)+' • TrxID: '+esc(p.trx_id)+' • '+money(p.amount||0)+' • '+fdate(p.created_at)+'</small>'+(p.status=='rejected'?'<p style="font-size:13px;color:#dc2626;margin-top:6px">'+x('পেমেন্ট মেলেনি। সঠিক TrxID দিয়ে আবার জমা দিন বা WhatsApp-এ যোগাযোগ করুন।','Payment not matched. Resubmit with the correct TrxID or contact us on WhatsApp.')+'</p>':'')+'</div>'}).join(''):'<p style="color:var(--mut);text-align:center;padding:24px">'+x('এখনো কোনো পেমেন্ট নেই','No payments yet')+'</p>'))}
+function adPayH(){var f=ADV.f||'pending',l=ADP.filter(function(p){return f=='all'||p.status==f});
+return '<h2 style="margin-top:0">💳 পেমেন্ট যাচাই</h2><div class="row" style="margin-bottom:10px"><button class="tag" data-a="adback">← অ্যাডমিন প্যানেল</button></div><div class="chips">'+[['pending','অপেক্ষমাণ'],['verified','যাচাইকৃত'],['rejected','বাতিল'],['all','সব']].map(function(k){return '<button class="chip'+(f==k[0]?' on':'')+'" data-a="adpf" data-v="'+k[0]+'">'+k[1]+'</button>'}).join('')+'</div>'+
+(l.length?l.map(function(p){var pr=p.profiles||{},co=p.courses||{},dup=ADP.some(function(q){return q.id!=p.id&&q.trx_id==p.trx_id&&q.user_id!=p.user_id});
+return '<div class="card"><div class="row" style="margin:0"><b>'+esc(pr.full_name||'নাম নেই')+'</b>'+stH(p.status)+'</div><div style="font-size:14px;line-height:1.7;margin-top:4px">📚 '+esc(co.title_bn)+'<br>💰 '+money(p.amount||0)+(co.price!=null&&+co.price!=+p.amount?' <small style="color:#dc2626">(কোর্সের দাম '+money(co.price)+')</small>':'')+' • <b style="color:'+(PMC[p.method]||'inherit')+'">'+(PMN[p.method]||p.method)+'</b><br>🧾 TrxID: <b style="letter-spacing:.5px">'+esc(p.trx_id)+'</b><br>📱 প্রেরক: '+esc(p.sender||'—')+(pr.phone?' • প্রোফাইল: '+esc(pr.phone):'')+'<br><small style="color:var(--mut)">'+fdate(p.created_at)+'</small></div>'+
+(dup?'<p style="font-size:13px;color:#dc2626">⚠️ এই TrxID অন্য স্টুডেন্টের পেমেন্টেও আছে, সাবধানে যাচাই করুন</p>':'')+
+(p.status=='pending'?'<div class="row" style="gap:8px;margin-top:10px"><button class="btn" data-a="adver" data-id="'+p.id+'">✓ যাচাই করুন</button><button class="btn o" style="color:#dc2626" data-a="adrej" data-id="'+p.id+'">✕ বাতিল</button></div>':'')+'</div>'}).join(''):'<p style="color:var(--mut);text-align:center;padding:24px">কোনো পেমেন্ট নেই</p>')}
+document.addEventListener('click',function(e){
+var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a,id=+el.dataset.id;
+if(['pm','cpy','paysub','mycourses','mypay','adpay','adpf','adver','adrej'].indexOf(a)<0)return;
+if(a=='pm'){PM=el.dataset.v;paySheet({ps:v('ps'),pt:v('pt')})}
+else if(a=='cpy'){var t0=el.dataset.v;try{navigator.clipboard.writeText(t0).then(function(){toast(x('নম্বর কপি হয়েছে','Number copied'))},function(){toast(t0)})}catch(er){toast(t0)}}
+else if(a=='mycourses')myCourses();
+else if(a=='mypay')myPay();
+else if(a=='paysub'){if(!sb||!user)return;var sn=en(v('ps')).replace(/\D/g,''),tr=en(v('pt')).replace(/\s/g,'').toUpperCase();
+if(!/^01\d{9}$/.test(sn))return msg(x('সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন','Enter a valid 11-digit mobile number'));
+if(!/^[A-Z0-9]{8,12}$/.test(tr))return msg(x('সঠিক TrxID দিন (৮–১২ অক্ষর, শুধু ইংরেজি অক্ষর ও সংখ্যা)','Enter a valid TrxID (8–12 letters/digits)'));
+var it=payItems();if(!it.length)return closeS();el.disabled=true;
+sb.from('payments').insert(it.map(function(c){return {course_id:c.id,method:PM,trx_id:tr,amount:c.p,sender:sn}})).then(function(r){
+if(r.error)return msg(r.error.code=='23505'?x('এই TrxID দিয়ে আগেই পেমেন্ট জমা হয়েছে','This TrxID was already submitted'):r.error.message);
+var ids=it.map(function(c){return c.id});cart=cart.filter(function(c){return ids.indexOf(c.id)<0});payLoad();render();
+sheet('<div style="text-align:center;padding:10px 0"><div style="font-size:52px">✅</div><h2 style="justify-content:center">'+x('পেমেন্ট জমা হয়েছে','Payment submitted')+'</h2><p style="font-size:14px;color:var(--mut);margin-bottom:14px">'+x('অ্যাডমিন যাচাই করলেই কোর্সটি চালু হবে। অবস্থা দেখতে Menu → আমার পেমেন্ট।','Your course unlocks once an admin verifies it. Track it in Menu → My payments.')+'</p><button class="btn" data-a="mypay">'+x('আমার পেমেন্ট দেখুন','View my payments')+'</button></div>')}).catch(function(){msg(x('নেটওয়ার্ক সমস্যা','Network error'))})}
+else if(a=='adpay'){ADV={v:'pay',f:'pending'};adLoad(adShow)}
+else if(a=='adpf'){ADV={v:'pay',f:el.dataset.v};adShow()}
+else if(a=='adver'||a=='adrej'){var ver=a=='adver';
+if(!confirm(ver?'bKash/Nagad অ্যাপে TrxID ও টাকার পরিমাণ মিলিয়ে দেখেছেন? যাচাই করলে স্টুডেন্টের কোর্স চালু হয়ে যাবে।':'পেমেন্টটি বাতিল করবেন?'))return;
+sb.from('payments').update({status:ver?'verified':'rejected'}).eq('id',id).then(function(r){if(r.error)return toast(r.error.message);toast(ver?'✅ যাচাই হয়েছে, কোর্স চালু':'❌ বাতিল হয়েছে');var f=ADV.f;ADV={v:'pay',f:f};adLoad(adShow)})}
+});
+
 loadAll();
 
 render();
