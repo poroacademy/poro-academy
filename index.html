@@ -397,6 +397,36 @@ if(P.bad&&!confirm(n(P.ok.length)+' টি প্রশ্ন ঠিক আছ�
 sb.from('quiz_questions').insert(P.ok.map(function(z,i){return Object.assign({quiz_id:ADV.qid,sort:QQ.length+i+1},z)})).then(function(r){if(r.error)return toast(r.error.message);toast('✅ '+n(P.ok.length)+' টি প্রশ্ন যোগ হয়েছে');qzAdLoad()})}
 });
 
+/* ===== PHASE 6: PORO AI (Gemini via Supabase Edge Function "poro-ai") ===== */
+var AIH=[],AIL=null,AIB=0;
+function aiFmt(t){return mt(String(t||'').replace(/^#{1,6}\s*/gm,'')).replace(/\*\*([^*<]+?)\*\*/g,'<b>$1</b>').replace(/(^|<br>)\s*[\*\-]\s+/g,'$1• ')}
+function aiMsgH(m){return '<div class="msg '+(m.role=='ai'?'a':'u')+'">'+(m.role=='ai'?aiFmt(m.text):esc(m.text).replace(/\n/g,'<br>'))+'</div>'}
+function aiLeftT(){return AIL==null?'':(AIL>0?x('আজ আরও '+n(AIL)+'টি প্রশ্ন করতে পারবেন','You can ask '+AIL+' more question(s) today'):x('আজকের প্রশ্নের সীমা শেষ','Daily question limit reached'))}
+function aiLeftU(){var e=document.getElementById('ail');if(e)e.textContent=aiLeftT()}
+function aiScr(){var s=document.querySelector('.sh');if(s)s.scrollTop=s.scrollHeight}
+function aiSheet(){if(!user){toast(x('PORO AI ব্যবহার করতে আগে লগইন করুন','Please log in to use PORO AI'));return authSheet('in')}
+sheet('<div class="row" style="margin:0 0 10px"><h2 style="margin:0">🤖 PORO AI</h2>'+(AIH.length?'<button class="tag" data-a="aiclr">'+x('নতুন চ্যাট','New chat')+'</button>':'')+'</div><div id="ch"><div class="msg a">'+x('হ্যালো! আমি PORO AI। গণিত, বিজ্ঞান, ICT, ইংরেজি—যেকোনো পড়ার প্রশ্ন করুন, ধাপে ধাপে বুঝিয়ে দেব।','Hi! I am PORO AI. Ask any study question and I will explain it step by step.')+'</div>'+AIH.map(aiMsgH).join('')+'</div><small id="ail" style="display:block;color:var(--mut);margin-top:2px;min-height:16px">'+aiLeftT()+'</small><div class="cin"><input id="q" placeholder="'+t('aiph')+'" autocomplete="off"><button class="btn" style="width:auto" data-a="send">'+t('send')+'</button></div><small style="display:block;color:var(--mut);font-size:11.5px;margin-top:6px">'+x('AI ভুল করতে পারে। গুরুত্বপূর্ণ বিষয় শিক্ষকের কাছ থেকে মিলিয়ে নিন।','AI can make mistakes. Check important points with your teacher.')+'</small>');
+setTimeout(aiScr,50)}
+function send(){var q=document.getElementById('q');if(!q||AIB)return;var v=q.value.trim();if(!v)return;
+if(!sb||!user)return aiSheet();
+AIH.push({role:'user',text:v});q.value='';var ch=document.getElementById('ch');
+ch.insertAdjacentHTML('beforeend',aiMsgH(AIH[AIH.length-1])+'<div class="msg a" id="aiw">'+x('ভাবছি…','Thinking…')+'</div>');aiScr();AIB=1;
+sb.functions.invoke('poro-ai',{body:{messages:AIH}}).then(function(r){
+if(r.error){var c=r.error.context;return ((c&&typeof c.json=='function')?c.json().catch(function(){return {}}):Promise.resolve({})).then(function(d){aiFail(d||{},c&&c.status,r.error.message)})}
+AIB=0;var d=r.data||{};if(!d.answer)return aiFail(d,200);
+AIH.push({role:'ai',text:d.answer});if(d.left!=null)AIL=d.left;
+var w=document.getElementById('aiw');if(w)w.outerHTML=aiMsgH(AIH[AIH.length-1]);aiLeftU();mathR();aiScr()}).catch(function(e){aiFail({},0,String(e))})}
+function aiFail(d,st,raw){AIB=0;var lastQ=AIH.pop();
+var m=d.error=='limit'?x('আজকের '+n(d.limit||30)+'টি প্রশ্নের সীমা শেষ। কাল আবার জিজ্ঞাসা করুন, অথবা শিক্ষককে WhatsApp করুন।','Today\'s limit of '+(d.limit||30)+' questions is reached. Try again tomorrow or WhatsApp your teacher.')
+:(d.error=='login')?x('আবার লগইন করে চেষ্টা করুন।','Please log in again and retry.')
+:d.error=='setup'?x('PORO AI এখনো পুরোপুরি চালু হয়নি। শীঘ্রই চালু হবে।','PORO AI is not fully set up yet.')
+:x('দুঃখিত, এখন উত্তর দিতে পারছি না। একটু পরে আবার চেষ্টা করুন।','Sorry, I could not answer right now. Please try again shortly.');
+if(d.error=='limit')AIL=0;
+if(isStaff())m+=' [Admin: '+(st||'-')+' '+esc(d.detail||d.error||d.msg||d.message||raw||'')+']';
+var w=document.getElementById('aiw');if(w){w.removeAttribute('id');w.style.color='#dc2626';w.textContent=m}
+var q=document.getElementById('q');if(q&&!q.value&&lastQ)q.value=lastQ.text;aiLeftU();aiScr()}
+document.addEventListener('click',function(e){var el=e.target.closest('[data-a]');if(el&&el.dataset.a=='aiclr'){AIH=[];aiSheet()}});
+
 loadAll();
 
 render();
