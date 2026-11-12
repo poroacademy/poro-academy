@@ -20,7 +20,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 header{display:flex;align-items:center;gap:10px;padding:12px 16px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
 .fi{width:100%;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:12px;font:inherit;margin-bottom:8px}.lk{color:var(--pri);font-size:13px;cursor:pointer}.lg{height:38px;border-radius:10px}.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#059669,#34d399);display:grid;place-items:center;color:#fff;font-weight:700;font-size:20px}
-.brand{flex:1;line-height:1.1}.brand b{font-size:16px;letter-spacing:.5px}.brand small{display:block;color:var(--mut);font-size:12px}
+.brand{flex:1;line-height:1.1}.brand b{font-size:18px;letter-spacing:0}.brand small{display:block;color:var(--mut);font-size:12px}
 .ib{width:38px;height:38px;border-radius:12px;background:var(--card);box-shadow:var(--sh);display:grid;place-items:center;font-size:17px;position:relative}
 .dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:#ef4444}
 .pad{padding:0 16px 16px}
@@ -90,7 +90,7 @@ function bg(c,g){return c.img?'background:url('+c.img+') center/cover;height:aut
 function ln(a){return L=='bn'?a[0]:a[1]}
 function money(x){return '৳'+n(x)}
 function cardH(c,w){var g=COL[c.id%5].split(',');return '<div class="cc" data-a="course" data-id="'+c.id+'"><div class="cv" style="'+bg(c,g)+'">'+(c.img?'':ln(c.t).slice(0,22))+'</div><div class="cb"><b>'+ln(c.t)+'</b><small>'+ln(c.i)+' • '+n(c.l)+' '+t('lessons')+'</small><div class="row"><span class="price">'+(c.p?money(c.p):t('free'))+'</span><span class="tag">⭐ '+n('4.8')+'</span></div></div></div>'}
-function hdr(){return '<header><img class="lg" src="'+LOGO+'" alt="PORO ACADEMY"><div class="brand"><b>PORO ACADEMY</b><small>পড়ো একাডেমি</small></div><button class="ib" data-a="toast" data-m="'+(L=='bn'?'কোনো নতুন নোটিফিকেশন নেই (ডেমো)':'No new notifications (demo)')+'">🔔<i class="dot"></i></button><button class="ib" data-a="tab" data-v="menu">👤</button></header>'}
+function hdr(){return '<header><img class="lg" src="'+LOGO+'" alt="PORO ACADEMY"><div class="brand"><b>পড়ো একাডেমি</b><small>PORO ACADEMY</small></div><button class="ib" data-a="toast" data-m="'+(L=='bn'?'কোনো নতুন নোটিফিকেশন নেই (ডেমো)':'No new notifications (demo)')+'">🔔<i class="dot"></i></button><button class="ib" data-a="tab" data-v="menu">👤</button></header>'}
 function home(){
 var b=[['#047857,#34d399',['ভর্তি চলছে!','Admissions open!'],['এসএসসি ও এইচএসসি ব্যাচ','SSC & HSC batches'],['এখনই এনরোল','Enroll now']],['#0f766e,#5eead4',['PORO AI টিউটর','PORO AI Tutor'],['যেকোনো সময় প্রশ্ন করুন','Ask doubts anytime'],['চেষ্টা করুন','Try now']],['#166534,#86efac',['সাপ্তাহিক মডেল টেস্ট','Weekly model tests'],['প্রতি শুক্রবার','Every Friday'],['অংশ নিন','Join']]];
 return hdr()+'<div class="pad"><div class="search">🔍<input placeholder="'+t('search')+'" data-a="srch"></div>'+
@@ -539,7 +539,7 @@ var HS={notice:'',banners:[],live:[],stories:[],about:'',phone:'01410924602'},SQ
 function hsLoad(){if(!sb)return;sb.from('settings').select('value').eq('key','home').maybeSingle().then(function(r){if(r.data&&r.data.value){try{var o=JSON.parse(r.data.value);Object.keys(HS).forEach(function(k){if(o[k]!=null)HS[k]=o[k]});render()}catch(e){}}})}
 var _la10=loadAll;loadAll=function(){_la10();hsLoad()};
 function safeUrl(u){u=String(u||'').trim();return /^https?:\/\//i.test(u)?u:''}
-function hdr(){return '<header><img class="lg" src="'+LOGO+'" alt="PORO ACADEMY"><div class="brand"><b>PORO ACADEMY</b><small>পড়ো একাডেমি</small></div><button class="ib" data-a="notice">🔔'+(HS.notice?'<i class="dot"></i>':'')+'</button><button class="ib" data-a="tab" data-v="menu">👤</button></header>'}
+function hdr(){return '<header><img class="lg" src="'+LOGO+'" alt="PORO ACADEMY"><div class="brand"><b>পড়ো একাডেমি</b><small>PORO ACADEMY</small></div><button class="ib" data-a="notice">🔔'+(HS.notice?'<i class="dot"></i>':'')+'</button><button class="ib" data-a="tab" data-v="menu">👤</button></header>'}
 function cardH(c){var g=COL[c.id%5].split(','),ci=[].concat(c.c)[0],cn=CATS[ci]?ln([CATS[ci][1],CATS[ci][2]]):'';
 return '<div class="cc" data-a="course" data-id="'+c.id+'"><div class="cv" style="'+bg(c,g)+'">'+(c.img?'':esc(ln(c.t)).slice(0,40))+'</div><div class="cb"><b>'+esc(ln(c.t))+'</b><small>'+esc(ln(c.i))+' • '+n(c.l)+' '+t('lessons')+'</small><div class="row"><span class="price">'+(c.p?money(c.p):t('free'))+'</span>'+(cn?'<span class="tag">'+esc(cn)+'</span>':'')+'</div></div></div>'}
 function home(){
