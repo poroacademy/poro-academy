@@ -607,6 +607,21 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();DIP
 var _menu11=menu;menu=function(){var h=_menu11();return DIP?h.slice(0,-6)+'<button class="mi" data-a="install"><span>📲</span><span>'+x('অ্যাপ হিসেবে ইনস্টল করুন','Install the app')+'</span><span>›</span></button></div>':h};
 document.addEventListener('click',function(e){var el=e.target.closest('[data-a]');if(el&&el.dataset.a=='install'&&DIP){DIP.prompt();DIP.userChoice.then(function(){DIP=null;render()})}});
 
+/* ===== PHASE 12: auto-slide + dots for banner, featured courses, success stories ===== */
+document.head.insertAdjacentHTML('beforeend','<style>.hs,.slider{scroll-snap-type:x mandatory;scroll-behavior:smooth;scroll-padding:0 16px}.hs>*{scroll-snap-align:start}.dots{display:flex;justify-content:center;gap:6px;margin:8px 0 2px}.dots i{width:7px;height:7px;border-radius:4px;background:var(--bd);transition:all .3s}.dots i.on{width:18px;background:var(--pri)}</style>');
+var SLT=null,SLP=0;
+function slItems(el){return Array.prototype.filter.call(el.children,function(c){return c.offsetWidth>0})}
+function slIdx(el){var it=slItems(el),x0=el.scrollLeft,b=0,bd=1e9;it.forEach(function(c,i){var d=Math.abs(c.offsetLeft-el.offsetLeft-x0-(el.classList.contains('slider')?16:16));if(d<bd){bd=d;b=i}});if(el.scrollLeft+el.clientWidth>=el.scrollWidth-4)b=it.length-1;return b}
+function slDots(el){var d=el.nextElementSibling;if(!d||!d.classList.contains('dots'))return;var k=slIdx(el);Array.prototype.forEach.call(d.children,function(c,i){c.classList.toggle('on',i==k)})}
+function slSetup(){if(tab!='home')return;clearInterval(SLT);document.querySelectorAll('#app .slider,#app .hs').forEach(function(el){if(el.dataset.auto)return;var it=slItems(el);if(it.length<2||el.scrollWidth<=el.clientWidth+4)return;
+el.insertAdjacentHTML('afterend','<div class="dots">'+it.map(function(c,i){return '<i class="'+(i?'':'on')+'"></i>'}).join('')+'</div>');
+el.addEventListener('scroll',function(){slDots(el)},{passive:true});
+['touchstart','mousedown','wheel'].forEach(function(ev){el.addEventListener(ev,function(){SLP=Date.now()},{passive:true})});
+el.dataset.auto=1});
+SLT=setInterval(function(){if(document.hidden||document.querySelector('.sheet,.pv')||Date.now()-SLP<8000)return;
+document.querySelectorAll('#app [data-auto]').forEach(function(el){var it=slItems(el),k=slIdx(el),nx=(k+1)%it.length;el.scrollTo({left:nx?it[nx].offsetLeft-el.offsetLeft-16:0,behavior:'smooth'})})},4000)}
+var _render12=render;render=function(){_render12();if(tab=='home')setTimeout(slSetup,30);else clearInterval(SLT)};
+
 loadAll();
 
 render();
