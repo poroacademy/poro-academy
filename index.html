@@ -485,11 +485,28 @@ function pvErr(){var b=vpEl('pvb');if(b)b.innerHTML='<div class="pvl">'+x('ন�
 function pdfView(l){var u=l.pdf_url||'';closeS();vpKill();pvClose();
 document.body.insertAdjacentHTML('beforeend','<div class="pv" id="pv" oncontextmenu="return false"><div class="pvh"><button data-a="pvx">←</button><b>'+esc(l.title)+'</b><button data-a="pvz" data-v="-1">−</button><button data-a="pvz" data-v="1">+</button></div><div class="pvb" id="pvb"><div class="pvl">'+x('নোট লোড হচ্ছে…','Loading notes…')+'</div></div></div>');
 try{history.pushState({pv:1},'')}catch(e){}
-var P;
-if(/^storage:/.test(u))P=sb.storage.from('notes').download(u.slice(8)).then(function(r){if(r.error||!r.data)throw r.error||'nodata';return r.data.arrayBuffer()});
-else if(u=='drive')P=sb.functions.invoke('poro-note',{body:{lesson_id:l.id}}).then(function(r){if(r.error){var c=r.error.context;return ((c&&typeof c.json=='function')?c.json().catch(function(){return {}}):Promise.resolve({})).then(function(d){throw d})}var d=r.data;if(d&&typeof d.arrayBuffer=='function')return d.arrayBuffer();if(d instanceof ArrayBuffer)return d;throw {error:'type'}});
-else P=Promise.reject({error:'legacy'});
-P.then(function(buf){return pdfLib().then(function(m){return m.getDocument({data:new Uint8Array(buf)}).promise})}).then(function(doc){if(!vpEl('pv')){doc.destroy();return}PVD=doc;PVS=1;pvRender()}).catch(function(d){pvErr();if(isStaff()&&d){var b=vpEl('pvb');if(b)b.insertAdjacentHTML('beforeend','<div class="pvl" style="font-size:12px;opacity:.8">[Admin: '+esc(d.detail||d.error||d.message||String(d))+']</div>')}})}
+var ck=user?'u'+user.id+'_l'+l.id:'';
+pdfLib();
+var P=pcGet(ck).then(function(c){if(c)return c;var D;
+if(/^storage:/.test(u))D=sb.storage.from('notes').download(u.slice(8)).then(function(r){if(r.error||!r.data)throw r.error||'nodata';return r.data.arrayBuffer()});
+else if(u=='drive')D=dlDrive(l);
+else D=Promise.reject({error:'legacy'});
+return D.then(function(buf){pcPut(ck,buf.slice(0));return buf})});
+P.then(function(buf){pvMsg(x('খোলা হচ্ছে…','Opening…'));return pdfLib().then(function(m){return m.getDocument({data:new Uint8Array(buf)}).promise})}).then(function(doc){if(!vpEl('pv')){doc.destroy();return}PVD=doc;PVS=1;pvRender()}).catch(function(d){pvErr();if(isStaff()&&d){var b=vpEl('pvb');if(b)b.insertAdjacentHTML('beforeend','<div class="pvl" style="font-size:12px;opacity:.8">[Admin: '+esc(d.detail||d.error||d.message||String(d))+']</div>')}})}
+function pvMsg(t){var b=vpEl('pvb'),e=b&&b.querySelector('.pvl');if(e)e.textContent=t}
+function dlDrive(l){return sb.auth.getSession().then(function(ss){var tk=ss.data.session&&ss.data.session.access_token;
+return fetch(SB_URL+'/functions/v1/poro-note',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+tk},body:JSON.stringify({lesson_id:l.id})})}).then(function(r){
+if(!r.ok)return r.json().catch(function(){return {}}).then(function(d){throw d});
+var tot=+r.headers.get('content-length')||0;if(!r.body||!r.body.getReader)return r.arrayBuffer();
+var rd=r.body.getReader(),parts=[],got=0;
+return (function pump(){return rd.read().then(function(res){if(res.done){var out=new Uint8Array(got),o=0;parts.forEach(function(c){out.set(c,o);o+=c.length});return out.buffer}
+parts.push(res.value);got+=res.value.length;pvMsg(x('নোট লোড হচ্ছে… ','Loading notes… ')+(tot?n(Math.min(99,Math.round(got*100/tot)))+'%':n((got/1048576).toFixed(1))+' MB'));return pump()})})()})}
+/* small per-device cache so a note opens instantly the second time (7 days, cleared on logout) */
+function pcDb(){return new Promise(function(res,rej){try{var r=indexedDB.open('poro',1);r.onupgradeneeded=function(){r.result.createObjectStore('pdf')};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej()}}catch(e){rej()}})}
+function pcGet(k){if(!k)return Promise.resolve(null);return pcDb().then(function(db){return new Promise(function(res){try{var g=db.transaction('pdf').objectStore('pdf').get(k);g.onsuccess=function(){var v=g.result;res(v&&Date.now()-v.t<6048e5?v.b:null)};g.onerror=function(){res(null)}}catch(e){res(null)}})}).catch(function(){return null})}
+function pcPut(k,b){if(!k)return;pcDb().then(function(db){try{db.transaction('pdf','readwrite').objectStore('pdf').put({b:b,t:Date.now()},k)}catch(e){}}).catch(function(){})}
+document.addEventListener('click',function(e){var el=e.target.closest('[data-a]');if(el&&el.dataset.a=='logout'){try{indexedDB.deleteDatabase('poro')}catch(x0){}}});
+var _course9=course;course=function(id){_course9(id);if(!PDFJS)setTimeout(function(){pdfLib().catch(function(){})},400)};
 function pvRender(){var b=vpEl('pvb');if(!b||!PVD)return;if(PVL){PVL.disconnect();PVL=null}
 var W=Math.round(Math.min(b.clientWidth-16,900)*PVS),dpr=Math.min(window.devicePixelRatio||1,2);b.innerHTML='';
 PVD.getPage(1).then(function(p1){var v1=p1.getViewport({scale:1}),sc=W/v1.width;
