@@ -111,9 +111,9 @@ var s=sub(),d=0;
 return hdr()+'<div class="pad">'+cart.map(function(c){return '<div class="card row"><div><b>'+ln(c.t)+'</b><br><span class="price">'+money(c.p)+'</span></div><button class="tag" data-a="rm" data-id="'+c.id+'">✕</button></div>'}).join('')+
 '<div class="card" style="margin-top:12px">'+(d?'<div class="row"><span>'+(L=='bn'?'ছাড়':'Discount')+'</span><span>-'+money(d)+'</span></div>':'')+'<div class="row"><b>'+t('total')+'</b><b class="price">'+money(s-d)+'</b></div></div><button class="btn" data-a="pay">'+t('pay')+'</button></div>'}
 function menu(){
-var it=[['🤖',ask0(),'ai'],['📊',L=='bn'?'আমার ড্যাশবোর্ড':'My dashboard','dash'],['🔖',L=='bn'?'বুকমার্ক ও নোট':'Bookmarks & notes','x'],['🏅',L=='bn'?'সার্টিফিকেট':'Certificates','x'],['📝',L=='bn'?'পরীক্ষা ও ফলাফল':'Exams & results','x'],['🎧',L=='bn'?'সাহায্য ও সাপোর্ট':'Help & support','x'],['ℹ️',L=='bn'?'আমাদের সম্পর্কে':'About us','x']];
+var it=[['🤖',ask0(),'ai'],['📊',L=='bn'?'আমার ড্যাশবোর্ড':'My dashboard','dash'],['🔖',L=='bn'?'বুকমার্ক ও নোট':'Bookmarks & notes','x'],['🏅',L=='bn'?'সার্টিফিকেট':'Certificates','x'],['📝',L=='bn'?'পরীক্ষা ও ফলাফল':'Exams & results','myres'],['🎧',L=='bn'?'সাহায্য ও সাপোর্ট':'Help & support','x'],['ℹ️',L=='bn'?'আমাদের সম্পর্কে':'About us','x']];
 return hdr()+'<div class="pad">'+profCard()+
-it.map(function(x){return '<button class="mi" data-a="'+(x[2]=='ai'?'ai':'toast')+'" data-m="'+(L=='bn'?'পরবর্তী ধাপে যুক্ত হবে':'Coming in the next phase')+'"><span>'+x[0]+'</span><span>'+x[1]+'</span><span>›</span></button>'}).join('')+
+it.map(function(x){return '<button class="mi" data-a="'+(x[2]=='ai'||x[2]=='myres'?x[2]:'toast')+'" data-m="'+(L=='bn'?'পরবর্তী ধাপে যুক্ত হবে':'Coming in the next phase')+'"><span>'+x[0]+'</span><span>'+x[1]+'</span><span>›</span></button>'}).join('')+
 '<button class="mi" data-a="theme"><span>🌗</span><span>'+t('dark')+'</span><span>›</span></button><button class="mi" data-a="lang"><span>🌐</span><span>'+t('lang')+'</span><span>›</span></button></div>'}
 function ask0(){return t('ask')}
 function render(){
@@ -137,7 +137,7 @@ var r=document.createElement('div');r.className='msg a';r.textContent='…';ch.a
 setTimeout(function(){r.innerHTML=(L=='bn'?'<b>ধাপে ধাপে সমাধান (ডেমো)</b><br>১. প্রশ্নটি বিশ্লেষণ করি।<br>২. সংশ্লিষ্ট সূত্র প্রয়োগ করি।<br>৩. উত্তর যাচাই করি।<br><small>📎 রেফারেন্স: ক্লাস ২, অধ্যায় ১ নোট • নিশ্চিত না হলে শিক্ষকের কাছে পাঠানো হবে।</small>':'<b>Step-by-step answer (demo)</b><br>1. Analyse the question.<br>2. Apply the relevant formula.<br>3. Verify the result.<br><small>📎 Reference: Lesson 2, Chapter 1 notes • Unsure answers are forwarded to a teacher.</small>')},700)}
 document.addEventListener('click',function(e){
 var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a;
-if(a=='bg'){if(e.target===el)closeS();return}
+if(a=='bg'){if(e.target===el&&(!QRUN||confirm(L=='bn'?'কুইজ থেকে বের হবেন? উত্তর জমা হবে না।':'Leave the quiz? Your answers will not be saved.'))){QRUN=0;closeS()}return}
 if(a=='tab'){tab=el.dataset.v;closeS();render();scrollTo(0,0)}
 else if(a=='cat'){cat=el.dataset.i=='all'?'all':+el.dataset.i;tab='courses';render()}
 else if(a=='course')course(el.dataset.id)
@@ -210,16 +210,16 @@ sb.from('courses').select('*,chapters(*,lessons(*))').eq('published',true).order
 if(user){sb.from('enrollments').select('course_id').then(function(r){enr={};(r.data||[]).forEach(function(e){enr[e.course_id]=1})});
 sb.from('progress').select('lesson_id').eq('completed',true).then(function(r){done={};(r.data||[]).forEach(function(e){done[e.lesson_id]=1})})}}
 function course(id){var c=CR.find(function(q){return q.id==id});if(!c)return;var g=COL[c.id%5].split(','),ac=hasAcc(c),ic=cart.some(function(q){return q.id==id});
-var body=(c.chs||[]).map(function(h,i){var ls=h.lessons||[];return '<div class="card"><b>'+n(i+1)+'. '+esc(h.title)+'</b>'+(ls.length?ls.map(function(l){return '<div class="les" data-a="play" data-id="'+l.id+'"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><span>'+(done[l.id]?'✅':'')+'</span></div>'}).join(''):'<div class="les"><small style="color:var(--mut)">'+(ac?x('ক্লাস শীঘ্রই আসছে','Lessons coming soon'):x('🔒 এনরোল করলে ক্লাস দেখা যাবে','🔒 Enroll to unlock lessons'))+'</small></div>')+'</div>'}).join('');
+var body=(c.chs||[]).map(function(h,i){var ls=h.lessons||[];return '<div class="card"><b>'+n(i+1)+'. '+esc(h.title)+'</b>'+(ls.length?ls.map(function(l){return '<div class="les" data-a="play" data-id="'+l.id+'"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><span>'+(done[l.id]?'✅':'')+'</span></div>'}).join(''):'<div class="les"><small style="color:var(--mut)">'+(ac?x('ক্লাস শীঘ্রই আসছে','Lessons coming soon'):x('🔒 এনরোল করলে ক্লাস দেখা যাবে','🔒 Enroll to unlock lessons'))+'</small></div>')+quizH(h.id)+'</div>'}).join('')+quizH(null,c.id);
 sheet('<div class="cv" style="border-radius:16px;'+bg(c,g)+'">'+(c.img?'':esc(ln(c.t)))+'</div><h2 style="margin:12px 0 2px">'+esc(ln(c.t))+'</h2><small style="color:var(--mut)">👨‍🏫 '+esc(ln(c.i))+' • '+n(c.l)+' '+t('lessons')+' • '+n(c.h)+x(' ঘণ্টা',' hrs')+'</small><p style="font-size:14px;margin:8px 0">'+esc(c.desc)+'</p><h2 style="margin:10px 0 4px">'+t('syl')+'</h2>'+body+
 (c.p&&!ac&&pendFor(c.id)?'<button class="btn o" data-a="mypay">⏳ '+x('পেমেন্ট যাচাই হচ্ছে','Payment under review')+'</button>':'<button class="btn" data-a="'+(c.p&&ac?'none':c.p?'addc':'enr')+'" data-id="'+c.id+'">'+(c.p?(ac?'✓ '+x('এনরোল করা আছে','Enrolled'):(ic?'✓ ':'')+t('add')+' • '+money(c.p)):t('enroll'))+'</button>'))}
 function play(id){var l=LS[id];if(!l)return;sheet('<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/'+esc(l.youtube_id)+'?rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><h2 style="margin:12px 0 4px">'+esc(l.title)+'</h2><p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(l.description)+'</p><button class="btn" data-a="done" data-id="'+id+'">'+(done[id]?'✅ ':'✓ ')+x('ক্লাস সম্পন্ন','Mark as completed')+'</button>')}
 function adLoad(cb){Promise.all([sb.from('courses').select('*,chapters(*,lessons(*))').order('id'),sb.from('payments').select('*,profiles(full_name,phone),courses(title_bn,price)').order('created_at',{ascending:false}).limit(200)]).then(function(r){AD=r[0].data||[];ADP=r[1].data||[];cb()})}
-function adShow(){if(ADV.v=='pay')return sheet(adPayH());var c=AD.find(function(q){return q.id==ADV.cid})||{},h,chs=(c.chapters||[]).slice().sort(srt);
+function adShow(){if(ADV.v=='pay')return sheet(adPayH());if(ADV.v=='quiz')return sheet(qzAdH());var c=AD.find(function(q){return q.id==ADV.cid})||{},h,chs=(c.chapters||[]).slice().sort(srt);
 if(ADV.v=='list')h='<h2 style="margin-top:0">⚙️ অ্যাডমিন প্যানেল</h2><button class="btn o" data-a="adpay">💳 পেমেন্ট যাচাই'+(adPend()?' ('+n(adPend())+' টি অপেক্ষমাণ)':'')+'</button><h2>📚 কোর্স ম্যানেজমেন্ট</h2><button class="btn" data-a="adedit" data-id="0">+ নতুন কোর্স</button><div style="height:10px"></div>'+AD.map(function(k){return '<div class="card row"><div style="min-width:0"><b>'+esc(k.title_bn||k.title_en)+'</b><br><small>'+(k.published?'🟢 Published':'⚪ Draft')+' • ৳'+k.price+'</small></div><button class="tag" data-a="adopen" data-id="'+k.id+'">খুলুন</button></div>'}).join('');
 else if(ADV.v=='edit')h='<h2 style="margin-top:0">'+(ADV.cid?'কোর্স এডিট':'নতুন কোর্স')+'</h2>'+inp('tb','text','কোর্সের নাম (বাংলা)',c.title_bn)+inp('te','text','Course title (English)',c.title_en)+'<select class="fi" id="cat">'+CATS.map(function(k,i){return '<option value="'+(i+1)+'"'+(c.category_id==i+1?' selected':'')+'>'+k[1]+'</option>'}).join('')+'</select>'+inp('pr','number','দাম (টাকা, ফ্রি হলে ০)',c.price)+inp('ins','text','শিক্ষকের নাম',c.instructor_name)+inp('ll','text','মোট ক্লাস (যেমন ৬০+)',c.lessons_label)+inp('hl','text','মোট ঘণ্টা (যেমন ১০০+)',c.hours_label)+inp('cv','text','কভার ছবির লিংক',c.cover_url)+inp('ds','text','কোর্সের বিবরণ',c.description)+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="pb"'+(c.published?' checked':'')+'> প্রকাশিত (Published)</label><button class="btn" data-a="adsave">সংরক্ষণ করুন</button>'+(ADV.cid?'<button class="btn o" style="margin-top:8px;color:#dc2626" data-a="adcdel">কোর্স মুছুন</button>':'')+'<p><button class="tag" data-a="adback">← ফিরে যান</button></p>';
 else h='<h2 style="margin-top:0">'+esc(c.title_bn)+'</h2><div class="row" style="margin-bottom:10px"><button class="tag" data-a="adback">← সব কোর্স</button><button class="tag" data-a="adedit" data-id="'+c.id+'">✏️ কোর্স এডিট</button></div>'+chs.map(function(ch){return '<div class="card"><div class="row"><b>'+esc(ch.title)+'</b><button class="tag" data-a="adchdel" data-id="'+ch.id+'">✕</button></div>'+(ch.lessons||[]).slice().sort(srt).map(function(l){return '<div class="les"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><button class="tag" data-a="adldel" data-id="'+l.id+'">✕</button></div>'}).join('')+'</div>'}).join('')+'<div class="card"><b>+ নতুন অধ্যায়</b>'+inp('cn','text','অধ্যায়ের নাম')+'<button class="btn o" data-a="adch">অধ্যায় যোগ করুন</button></div>'+(chs.length?'<div class="card"><b>+ নতুন ভিডিও ক্লাস</b><select class="fi" id="lc">'+chs.map(function(ch){return '<option value="'+ch.id+'">'+esc(ch.title)+'</option>'}).join('')+'</select>'+inp('lt','text','ক্লাসের নাম')+inp('ly','text','YouTube লিংক')+inp('ld','text','বিবরণ (ঐচ্ছিক)')+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="lp"> ফ্রি প্রিভিউ</label><button class="btn" data-a="adl">ক্লাস যোগ করুন</button></div>':'');
-sheet(h)}
+if(ADV.v=='course'&&c.id)h+=qzSec(c,chs);sheet(h)}
 document.addEventListener('click',function(e){
 var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a,id=+el.dataset.id;
 if(a=='play')return play(id);
@@ -296,6 +296,93 @@ else if(a=='adpf'){ADV={v:'pay',f:el.dataset.v};adShow()}
 else if(a=='adver'||a=='adrej'){var ver=a=='adver';
 if(!confirm(ver?'bKash/Nagad অ্যাপে TrxID ও টাকার পরিমাণ মিলিয়ে দেখেছেন? যাচাই করলে স্টুডেন্টের কোর্স চালু হয়ে যাবে।':'পেমেন্টটি বাতিল করবেন?'))return;
 sb.from('payments').update({status:ver?'verified':'rejected'}).eq('id',id).then(function(r){if(r.error)return toast(r.error.message);toast(ver?'✅ যাচাই হয়েছে, কোর্স চালু':'❌ বাতিল হয়েছে');var f=ADV.f;ADV={v:'pay',f:f};adLoad(adShow)})}
+});
+
+/* ===== PHASE 5: MCQ quizzes ===== */
+document.head.insertAdjacentHTML('beforeend','<style>.qo{display:block;width:100%;text-align:left;border:1.5px solid var(--bd);border-radius:12px;padding:10px 12px;margin-top:8px;background:var(--card);font-size:14.5px}.qo.on{border-color:var(--pri);background:var(--pri2);font-weight:600}.qo.ok{border-color:#059669;background:#d1fae5;color:#065f46;font-weight:600}.qo.bad{border-color:#dc2626;background:#fee2e2;color:#991b1b}.qtop{position:sticky;top:-16px;background:var(--bg);padding:6px 0 8px;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:8px}.qtm{font-weight:700;font-variant-numeric:tabular-nums;background:var(--pri2);color:var(--pri);padding:4px 10px;border-radius:10px}.qtm.low{background:#fee2e2;color:#dc2626}textarea.fi{resize:vertical;min-height:90px}</style>');
+var QZ=[],QB={},ADQ=[],QQ=[],QA=[],QCUR=null,QANS={},QTMR=null,QEND=0,QRUN=0,OPL=['ক','খ','গ','ঘ'];
+function nl(t){return esc(t).replace(/\n/g,'<br>')}
+function pct(a,b){return b?Math.round(a*100/b):0}
+function qzLoad(){if(!sb)return;
+sb.from('quizzes').select('*').eq('published',true).order('id').then(function(r){QZ=r.data||[]});
+if(!user){QB={};return}
+sb.from('quiz_attempts').select('quiz_id,score,total').eq('user_id',user.id).then(function(r){QB={};(r.data||[]).forEach(function(a){var b=QB[a.quiz_id];if(!b||pct(a.score,a.total)>pct(b.score,b.total))QB[a.quiz_id]=a})})}
+var _la4=loadAll;loadAll=function(){_la4();qzLoad()};
+function quizH(chid,cid){var l=QZ.filter(function(q){return chid?q.chapter_id==chid:(q.course_id==cid&&!q.chapter_id)});if(!l.length)return '';
+return (chid?'':'<div class="card"><b>📝 '+x('কোর্সের পরীক্ষা','Course exams')+'</b>')+l.map(function(q){var b=QB[q.id];
+return '<div class="les" data-a="qz" data-id="'+q.id+'"><span>📝</span><span style="flex:1">'+esc(q.title)+(q.minutes?' <small style="color:var(--mut)">• ⏱ '+n(q.minutes)+x(' মিনিট',' min')+'</small>':'')+(q.is_preview?' <small class="tag">'+x('ফ্রি','Free')+'</small>':'')+'</span><span>'+(b?'<span class="tag">🏆 '+n(b.score)+'/'+n(b.total)+'</span>':'›')+'</span></div>'}).join('')+(chid?'':'</div>')}
+function qzOpen(id){if(!user){toast(x('কুইজ দিতে আগে লগইন করুন','Please log in to take the quiz'));return authSheet('in')}
+sb.rpc('get_quiz',{qid:id}).then(function(r){if(r.error)return toast(r.error.message);var q=r.data;if(!q.questions.length)return toast(x('এই কুইজে এখনো প্রশ্ন যোগ হয়নি','No questions in this quiz yet'));
+QCUR=q;QANS={};var b=QB[q.id];
+sheet('<div style="text-align:center;padding:8px 0"><div style="font-size:48px">📝</div><h2 style="justify-content:center;margin:6px 0">'+esc(q.title)+'</h2><p style="color:var(--mut);margin-bottom:14px">'+n(q.questions.length)+x(' টি প্রশ্ন',' questions')+(q.minutes?' • ⏱ '+n(q.minutes)+x(' মিনিট',' min'):' • '+x('সময়ের সীমা নেই','No time limit'))+'</p>'+(b?'<p style="margin-bottom:14px"><span class="tag">🏆 '+x('আপনার সেরা','Your best')+': '+n(b.score)+'/'+n(b.total)+'</span></p>':'')+'<p style="font-size:13px;color:var(--mut);margin-bottom:14px">'+x('প্রতিটি প্রশ্নের একটি সঠিক উত্তর বেছে নিন। শেষে "জমা দিন" চাপুন।','Choose one answer for each question, then tap "Submit".')+'</p><button class="btn" data-a="qzgo">'+x('শুরু করুন','Start')+'</button></div>')}).catch(function(){toast(x('নেটওয়ার্ক সমস্যা','Network error'))})}
+function qzStart(){var q=QCUR;QRUN=1;QANS={};
+sheet('<div class="qtop"><b style="min-width:0">'+esc(q.title)+'</b><small id="qzp" style="color:var(--mut);white-space:nowrap"></small>'+(q.minutes?'<span class="qtm" id="qzt"></span>':'')+'</div>'+
+q.questions.map(function(qq,i){return '<div class="card"><b>'+n(i+1)+'. '+nl(qq.body)+'</b>'+qq.options.map(function(o,k){return '<button class="qo" data-a="qa" data-q="'+qq.id+'" data-o="'+k+'">'+OPL[k]+') '+esc(o)+'</button>'}).join('')+'</div>'}).join('')+
+'<button class="btn" id="qzb" data-a="qzsub">'+x('জমা দিন','Submit')+'</button>');
+qzProg();clearInterval(QTMR);if(q.minutes){QEND=Date.now()+q.minutes*60000;qzTick();QTMR=setInterval(qzTick,1000)}}
+function qzProg(){var e=document.getElementById('qzp');if(e)e.textContent=n(Object.keys(QANS).length)+'/'+n(QCUR.questions.length)}
+function qzTick(){var e=document.getElementById('qzt');if(!e||!QRUN){clearInterval(QTMR);return}
+var s=Math.max(0,Math.round((QEND-Date.now())/1000));e.textContent='⏱ '+n(Math.floor(s/60)+':'+('0'+s%60).slice(-2));e.className='qtm'+(s<=60?' low':'');
+if(s<=0){clearInterval(QTMR);toast(x('সময় শেষ! উত্তর জমা হচ্ছে','Time is up! Submitting'));qzSubmit(1)}}
+function qzSubmit(auto){var q=QCUR,left=q.questions.length-Object.keys(QANS).length;
+if(!auto&&left&&!confirm(x(n(left)+' টি প্রশ্নের উত্তর দেননি। তবুও জমা দেবেন?',left+' question(s) unanswered. Submit anyway?')))return;
+clearInterval(QTMR);var b=document.getElementById('qzb');if(b)b.disabled=true;
+sb.rpc('submit_quiz',{qid:q.id,ans:QANS}).then(function(r){if(r.error){if(b)b.disabled=false;return toast(r.error.message)}
+QRUN=0;qzLoad();var d=r.data,R={};(d.results||[]).forEach(function(z){R[z.id]=z});var p=pct(d.score,d.total);
+sheet('<div style="text-align:center;padding:6px 0 10px"><div style="font-size:46px">'+(p>=80?'🏆':p>=50?'👍':'📚')+'</div><div style="font-size:34px;font-weight:700;color:var(--pri)">'+n(d.score)+'/'+n(d.total)+'</div><p style="color:var(--mut)">'+n(p)+'% • '+(p>=80?x('অসাধারণ!','Excellent!'):p>=50?x('ভালো করেছেন!','Good job!'):x('আরও অনুশীলন করুন','Keep practising'))+'</p></div><h2>'+x('উত্তর মিলিয়ে নিন','Review answers')+'</h2>'+
+q.questions.map(function(qq,i){var z=R[qq.id]||{},my=QANS[qq.id];return '<div class="card"><b>'+n(i+1)+'. '+nl(qq.body)+'</b>'+qq.options.map(function(o,k){var c=k==z.correct?' ok':(k==my?' bad':'');return '<div class="qo'+c+'">'+OPL[k]+') '+esc(o)+(k==z.correct?' ✓':(k==my?' ✕':''))+'</div>'}).join('')+(my==null?'<p style="font-size:13px;color:#b45309;margin-top:6px">'+x('উত্তর দেননি','Not answered')+'</p>':'')+(z.explanation?'<p style="font-size:13.5px;margin-top:8px">💡 '+nl(z.explanation)+'</p>':'')+'</div>'}).join('')+
+'<button class="btn" data-a="qz" data-id="'+q.id+'">🔁 '+x('আবার দিন','Try again')+'</button><button class="btn o" style="margin-top:8px" data-a="course" data-id="'+q.course_id+'">'+x('কোর্সে ফিরে যান','Back to course')+'</button>')}).catch(function(){if(b)b.disabled=false;toast(x('নেটওয়ার্ক সমস্যা, আবার চাপুন','Network error, tap again'))})}
+function myRes(){if(!user)return authSheet('in');
+sb.from('quiz_attempts').select('*,quizzes(title)').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50).then(function(r){var l=r.data||[];
+sheet('<h2 style="margin-top:0">📝 '+x('পরীক্ষা ও ফলাফল','Exams & results')+'</h2>'+(l.length?l.map(function(a){var p=pct(a.score,a.total);return '<div class="card row" style="margin-top:0"><div style="min-width:0"><b>'+esc((a.quizzes||{}).title||'')+'</b><br><small style="color:var(--mut)">'+fdate(a.created_at)+'</small></div><span class="tag"'+(p<50?' style="background:#fee2e2;color:#dc2626"':'')+'>'+n(a.score)+'/'+n(a.total)+' • '+n(p)+'%</span></div>'}).join(''):'<p style="color:var(--mut);text-align:center;padding:24px">'+x('এখনো কোনো কুইজ দেননি। কোর্সের অধ্যায়ের নিচে কুইজ পাবেন।','No quizzes taken yet. You will find quizzes under course chapters.')+'</p>'))})}
+/* --- admin --- */
+var _adl5=adLoad;adLoad=function(cb){_adl5(function(){sb.from('quizzes').select('*').order('id').then(function(r){ADQ=r.data||[];cb()})})};
+function qzAdLoad(){Promise.all([sb.from('quiz_questions').select('*').eq('quiz_id',ADV.qid).order('sort').order('id'),sb.from('quiz_attempts').select('*,profiles(full_name)').eq('quiz_id',ADV.qid).order('created_at',{ascending:false}).limit(100)]).then(function(r){QQ=r[0].data||[];QA=r[1].data||[];adLoad(adShow)})}
+function qzSec(c,chs){var l=ADQ.filter(function(q){return q.course_id==c.id}),cn={};chs.forEach(function(h){cn[h.id]=h.title});
+return '<h2>📝 কুইজ / MCQ পরীক্ষা</h2>'+l.map(function(q){return '<div class="card row" style="margin-top:0"><div style="min-width:0"><b>'+esc(q.title)+'</b><br><small style="color:var(--mut)">'+(q.chapter_id?esc(cn[q.chapter_id]||''):'পুরো কোর্স')+' • '+(q.published?'🟢':'⚪')+(q.is_preview?' • ফ্রি':'')+'</small></div><button class="tag" data-a="adqopen" data-id="'+q.id+'">খুলুন</button></div>'}).join('')+
+'<div class="card"><b>+ নতুন কুইজ</b>'+inp('qt','text','কুইজের নাম (যেমন: অধ্যায় ১ – MCQ টেস্ট)')+'<select class="fi" id="qch"><option value="">পুরো কোর্স (চূড়ান্ত/মডেল টেস্ট)</option>'+chs.map(function(h){return '<option value="'+h.id+'">'+esc(h.title)+'</option>'}).join('')+'</select>'+inp('qm','number','সময় (মিনিট, সীমা না চাইলে ০)')+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="qpv"> ফ্রি (এনরোল ছাড়াও দেওয়া যাবে)</label><button class="btn o" data-a="adqnew">কুইজ তৈরি করুন</button></div>'}
+function qzAdH(){var q=ADQ.find(function(z){return z.id==ADV.qid})||{};
+return '<h2 style="margin-top:0">📝 '+esc(q.title)+'</h2><div class="row" style="margin-bottom:10px"><button class="tag" data-a="adqback">← কোর্সে ফিরে যান</button><span class="tag">'+n(QQ.length)+' টি প্রশ্ন</span></div>'+
+'<div class="card"><b>কুইজ সেটিংস</b>'+inp('qet','text','কুইজের নাম',q.title)+inp('qem','number','সময় (মিনিট)',q.minutes)+'<label style="display:block;margin-bottom:6px"><input type="checkbox" id="qep"'+(q.is_preview?' checked':'')+'> ফ্রি (এনরোল ছাড়াও)</label><label style="display:block;margin-bottom:10px"><input type="checkbox" id="qeb"'+(q.published?' checked':'')+'> প্রকাশিত (স্টুডেন্টরা দেখবে)</label><button class="btn o" data-a="adqsave">সংরক্ষণ করুন</button><button class="btn o" style="margin-top:8px;color:#dc2626" data-a="adqdel">কুইজ মুছুন</button></div>'+
+QQ.map(function(z,i){return '<div class="card"><div class="row" style="margin:0;align-items:flex-start"><b>'+n(i+1)+'. '+nl(z.body)+'</b><button class="tag" data-a="adqqdel" data-id="'+z.id+'">✕</button></div>'+(z.options||[]).map(function(o,k){return '<div style="font-size:14px;margin-top:4px;'+(k==z.correct?'color:#059669;font-weight:700':'')+'">'+OPL[k]+') '+esc(o)+(k==z.correct?' ✓':'')+'</div>'}).join('')+(z.explanation?'<small style="display:block;margin-top:6px;color:var(--mut)">💡 '+nl(z.explanation)+'</small>':'')+'</div>'}).join('')+
+'<div class="card"><b>+ একটি প্রশ্ন যোগ করুন</b><textarea class="fi" id="qqb" placeholder="প্রশ্ন লিখুন" style="min-height:60px"></textarea>'+OPL.map(function(o,k){return inp('qo'+k,'text','অপশন '+o)}).join('')+'<select class="fi" id="qqc">'+OPL.map(function(o,k){return '<option value="'+k+'">সঠিক উত্তর: '+o+'</option>'}).join('')+'</select>'+inp('qqx','text','ব্যাখ্যা (ঐচ্ছিক)')+'<button class="btn" data-a="adqadd">প্রশ্ন যোগ করুন</button></div>'+
+'<div class="card"><b>⚡ একসাথে অনেক প্রশ্ন যোগ করুন</b><small style="display:block;color:var(--mut);margin:4px 0 8px">প্রতিটি প্রশ্নের মাঝে একটি ফাঁকা লাইন রাখুন। এই নিয়মে লিখুন বা পেস্ট করুন:</small><pre style="font-size:13px;line-height:1.5;background:var(--bg);padding:8px;border-radius:10px;white-space:pre-wrap;margin-bottom:8px">√২ কোন ধরনের সংখ্যা?\nক) মূলদ\nখ) অমূলদ\nগ) স্বাভাবিক\nঘ) পূর্ণ\nউত্তর: খ\nব্যাখ্যা: √২ কে p/q আকারে লেখা যায় না।</pre><textarea class="fi" id="qbulk" rows="8" placeholder="এখানে প্রশ্নগুলো পেস্ট করুন"></textarea><button class="btn" data-a="adqbulk">সব প্রশ্ন যোগ করুন</button></div>'+
+'<h2>📊 ফলাফল ('+n(QA.length)+')</h2>'+(QA.length?QA.map(function(a){var p=pct(a.score,a.total);return '<div class="card row" style="margin-top:0"><div style="min-width:0"><b>'+esc((a.profiles||{}).full_name||'নাম নেই')+'</b><br><small style="color:var(--mut)">'+fdate(a.created_at)+'</small></div><span class="tag"'+(p<50?' style="background:#fee2e2;color:#dc2626"':'')+'>'+n(a.score)+'/'+n(a.total)+'</span></div>'}).join(''):'<p style="color:var(--mut);font-size:14px">এখনো কেউ কুইজটি দেয়নি</p>')}
+function optIdx(s){s=String(s||'').trim();var c=s.charAt(0),m={'ক':0,'খ':1,'গ':2,'ঘ':3,'a':0,'b':1,'c':2,'d':3,'A':0,'B':1,'C':2,'D':3,'1':0,'2':1,'3':2,'4':3,'১':0,'২':1,'৩':2,'৪':3};return m.hasOwnProperty(c)?m[c]:-1}
+function qzParse(t){var out=[],bad=0;
+String(t||'').replace(/\r/g,'').split(/\n\s*\n/).forEach(function(blk){var ls=blk.split('\n').map(function(z){return z.trim()}).filter(Boolean);if(!ls.length)return;
+var q={body:[],options:[],correct:-1,explanation:''},ansTxt='';
+ls.forEach(function(l){var m;
+if(m=l.match(/^(?:উত্তরঃ|উত্তর|উঃ|ans(?:wer)?)\s*[:ঃ\-–=]?\s*(.+)$/i)){ansTxt=m[1]}
+else if(m=l.match(/^(?:ব্যাখ্যাঃ|ব্যাখ্যা|explanation)\s*[:ঃ\-–]?\s*(.*)$/i)){q.explanation=m[1]}
+else if(q.body.length&&(m=l.match(/^\(?([কখগঘ]|[a-dA-D]|[১-৪1-4])\s*[\).।:]\s*(.+)$/))){if(q.options.length<4)q.options.push(m[2])}
+else if(!q.options.length)q.body.push(q.body.length?l:l.replace(/^[০-৯\d]+\s*[\.।)]\s*/,''));
+else if(q.explanation)q.explanation+='\n'+l});
+if(ansTxt){q.correct=optIdx(ansTxt);if(q.correct<0)q.correct=q.options.indexOf(ansTxt.replace(/^[কখগঘa-dA-D]\s*[\).।:]\s*/,''))}
+if(q.body.length&&q.options.length>=2&&q.correct>=0&&q.correct<q.options.length)out.push({body:q.body.join('\n'),options:q.options,correct:q.correct,explanation:q.explanation||null});else bad++});
+return {ok:out,bad:bad}}
+document.addEventListener('click',function(e){
+var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a,id=+el.dataset.id;
+if(['qz','qzgo','qa','qzsub','myres','adqopen','adqnew','adqback','adqsave','adqdel','adqqdel','adqadd','adqbulk'].indexOf(a)<0||!sb)return;
+if(a=='qz')qzOpen(id);
+else if(a=='qzgo')qzStart();
+else if(a=='qa'){var qi=el.dataset.q;QANS[qi]=+el.dataset.o;document.querySelectorAll('.qo[data-q="'+qi+'"]').forEach(function(b){b.classList.toggle('on',b===el)});qzProg()}
+else if(a=='qzsub')qzSubmit(0);
+else if(a=='myres')myRes();
+else if(a=='adqopen'){ADV={v:'quiz',qid:id,cid:ADV.cid};qzAdLoad()}
+else if(a=='adqback'){ADV={v:'course',cid:ADV.cid};adLoad(adShow)}
+else if(a=='adqnew'){var tt=v('qt');if(!tt)return toast('কুইজের নাম দিন');var cid=ADV.cid;
+sb.from('quizzes').insert({course_id:cid,chapter_id:+v('qch')||null,title:tt,minutes:+en(v('qm'))||0,is_preview:document.getElementById('qpv').checked,published:true}).select().single().then(function(r){if(r.error)return toast(r.error.message);toast('✅ কুইজ তৈরি হয়েছে, এবার প্রশ্ন যোগ করুন');ADV={v:'quiz',qid:r.data.id,cid:cid};qzLoad();qzAdLoad()})}
+else if(a=='adqsave'){var t1=v('qet');if(!t1)return toast('কুইজের নাম দিন');sb.from('quizzes').update({title:t1,minutes:+en(v('qem'))||0,is_preview:document.getElementById('qep').checked,published:document.getElementById('qeb').checked}).eq('id',ADV.qid).then(function(r){if(r.error)return toast(r.error.message);toast('✅ সংরক্ষিত');qzLoad();adLoad(adShow)})}
+else if(a=='adqdel'){if(!confirm('কুইজটি মুছবেন? সব প্রশ্ন ও ফলাফলও মুছে যাবে।'))return;var c2=ADV.cid;sb.from('quizzes').delete().eq('id',ADV.qid).then(function(r){if(r.error)return toast(r.error.message);ADV={v:'course',cid:c2};qzLoad();adLoad(adShow)})}
+else if(a=='adqqdel'){if(confirm('প্রশ্নটি মুছবেন?'))sb.from('quiz_questions').delete().eq('id',id).then(function(r){if(r.error)return toast(r.error.message);qzAdLoad()})}
+else if(a=='adqadd'){var bd=(document.getElementById('qqb').value||'').trim(),op=[0,1,2,3].map(function(k){return v('qo'+k)});
+if(!bd)return toast('প্রশ্ন লিখুন');if(op.some(function(o){return !o}))return toast('চারটি অপশনই লিখুন');
+sb.from('quiz_questions').insert({quiz_id:ADV.qid,body:bd,options:op,correct:+v('qqc'),explanation:v('qqx')||null,sort:QQ.length+1}).then(function(r){if(r.error)return toast(r.error.message);toast('✅ প্রশ্ন যোগ হয়েছে');qzAdLoad()})}
+else if(a=='adqbulk'){var P=qzParse(document.getElementById('qbulk').value);
+if(!P.ok.length)return toast('কোনো প্রশ্ন পড়া যায়নি। নমুনার মতো করে লিখুন।');
+if(P.bad&&!confirm(n(P.ok.length)+' টি প্রশ্ন ঠিক আছে, '+n(P.bad)+' টি নিয়ম মেনে লেখা হয়নি (বাদ যাবে)। ঠিক প্রশ্নগুলো যোগ করবেন?'))return;
+sb.from('quiz_questions').insert(P.ok.map(function(z,i){return Object.assign({quiz_id:ADV.qid,sort:QQ.length+i+1},z)})).then(function(r){if(r.error)return toast(r.error.message);toast('✅ '+n(P.ok.length)+' টি প্রশ্ন যোগ হয়েছে');qzAdLoad()})}
 });
 
 loadAll();
