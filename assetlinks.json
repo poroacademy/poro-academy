@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.poroacademy.app",
+        "sha256_cert_fingerprints": ["68:F8:D5:B0:AF:65:2C:4B:D4:C5:5E:6E:1B:31:7F:5C:FB:E0:45:C1:D8:18:86:D7:3A:8C:72:FA:88:67:D9:2C"]
+      }
+    }]
