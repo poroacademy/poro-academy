@@ -165,7 +165,7 @@ function inp(id,type,ph,v){return '<input class="fi" id="'+id+'" type="'+type+'"
 function profCard(){
 if(!user)return '<div class="card"><b>'+x('স্বাগতম!','Welcome!')+'</b><small style="display:block;color:var(--mut);margin:2px 0 10px">'+x('কোর্স কিনতে ও অগ্রগতি সংরক্ষণ করতে লগইন করুন','Log in to buy courses and save your progress')+'</small><button class="btn" data-a="authm" data-mode="in">'+x('লগইন / রেজিস্ট্রেশন','Login / Register')+'</button></div>';
 var nm=(prof&&prof.full_name)||user.email;
-return '<div class="card live"><div class="logo" style="width:52px;height:52px;font-size:24px">'+esc(nm.charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><b>'+esc(nm)+'</b><br><small style="color:var(--mut)">'+esc(user.email)+'</small></div><button class="tag" data-a="prof">✏️</button></div><button class="mi" data-a="logout"><span>🚪</span><span>'+x('লগআউট','Logout')+'</span><span>›</span></button>'}
+return '<div class="card live"><div class="logo" style="width:52px;height:52px;font-size:24px">'+esc(nm.charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><b>'+esc(nm)+'</b><br><small style="color:var(--mut)">'+esc(user.email)+'</small></div><button class="tag" data-a="prof">✏️</button></div>'+(isStaff()?'<button class="mi" data-a="adm"><span>⚙️</span><span>'+x('অ্যাডমিন প্যানেল','Admin panel')+'</span><span>›</span></button>':'')+'<button class="mi" data-a="logout"><span>🚪</span><span>'+x('লগআউট','Logout')+'</span><span>›</span></button>'}
 function authSheet(m){
 var ti={in:x('লগইন','Login'),up:x('রেজিস্ট্রেশন','Register'),fg:x('পাসওয়ার্ড রিসেট','Reset password')};
 sheet('<h2 style="margin-top:0">'+ti[m]+'</h2>'+(m=='up'?inp('an','text',x('পুরো নাম','Full name')):'')+inp('ae','email',x('ইমেইল','Email'))+(m!='fg'?inp('ap','password',x('পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)','Password (min 6 characters)')):'')+
@@ -174,7 +174,7 @@ sheet('<h2 style="margin-top:0">'+ti[m]+'</h2>'+(m=='up'?inp('an','text',x('প�
 function profSheet(){var p=prof||{};sheet('<h2 style="margin-top:0">'+x('আমার প্রোফাইল','My profile')+'</h2>'+inp('pn','text',x('পুরো নাম','Full name'),p.full_name)+inp('pp','tel',x('মোবাইল নম্বর','Mobile number'),p.phone)+inp('pc','text',x('শ্রেণি (যেমন: SSC, Class 8)','Class (e.g. SSC, Class 8)'),p.class_level)+'<p id="am" style="font-size:13px;min-height:18px"></p><button class="btn" id="ab" data-a="saveprof">'+x('সংরক্ষণ করুন','Save')+'</button>')}
 function msg(m,ok){var e=document.getElementById('am');if(e){e.style.color=ok?'#059669':'#dc2626';e.textContent=m}var b=document.getElementById('ab');if(b)b.disabled=false}
 function v(id){var e=document.getElementById(id);return e?e.value.trim():''}
-function setU(s){var id=s&&s.user?s.user.id:null;if(id===lastId&&(prof||!id))return;lastId=id;user=s?s.user:null;prof=null;render();
+function setU(s){var id=s&&s.user?s.user.id:null;if(id===lastId&&(prof||!id))return;lastId=id;user=s?s.user:null;prof=null;render();loadAll();
 if(id)sb.from('profiles').select('*').eq('id',id).single().then(function(r){prof=r.data;render()})}
 document.addEventListener('click',function(e){
 var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a;
@@ -196,6 +196,52 @@ if(m=='up'&&!r.data.session)return msg(x('ইমেইল ইনবক্স চ
 closeS();toast(x('স্বাগতম!','Welcome!'))}).catch(function(){msg(x('নেটওয়ার্ক সমস্যা','Network error'))})}
 });
 if(sb){sb.auth.getSession().then(function(r){setU(r.data.session)});sb.auth.onAuthStateChange(function(ev,ses){setU(ses)})}
+
+
+/* ===== PHASE 3: DB courses, YouTube player, admin panel ===== */
+var LS={},enr={},done={},AD=[],ADV={v:'list'};
+function isStaff(){return !!prof&&['super_admin','admin','instructor'].indexOf(prof.role)>-1}
+function hasAcc(c){return isStaff()||!c.p||!!enr[c.id]}
+function srt(a,b){return (a.sort||0)-(b.sort||0)||a.id-b.id}
+function ytId(u){u=String(u||'').trim();var m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/);return m?m[1]:(/^[\w-]{11}$/.test(u)?u:'')}
+function mapC(d){var chs=(d.chapters||[]).slice().sort(srt);chs.forEach(function(h){h.lessons=(h.lessons||[]).slice().sort(srt);h.lessons.forEach(function(l){LS[l.id]=l})});
+return {id:d.id,c:(d.category_id||12)-1,img:d.cover_url,t:[d.title_bn||d.title_en||'',d.title_en||d.title_bn||''],i:[d.instructor_name||'',d.instructor_name||''],p:+d.price||0,l:d.lessons_label||'0',h:d.hours_label||'0',desc:d.description||'',chs:chs}}
+function loadAll(){if(!sb)return;
+sb.from('courses').select('*,chapters(*,lessons(*))').eq('published',true).order('id').then(function(r){if(r.error||!r.data||!r.data.length)return;CR=r.data.map(mapC);render()});
+if(user){sb.from('enrollments').select('course_id').then(function(r){enr={};(r.data||[]).forEach(function(e){enr[e.course_id]=1})});
+sb.from('progress').select('lesson_id').eq('completed',true).then(function(r){done={};(r.data||[]).forEach(function(e){done[e.lesson_id]=1})})}}
+function course(id){var c=CR.find(function(q){return q.id==id});if(!c)return;var g=COL[c.id%5].split(','),ac=hasAcc(c),ic=cart.some(function(q){return q.id==id});
+var body=(c.chs||[]).map(function(h,i){var ls=h.lessons||[];return '<div class="card"><b>'+n(i+1)+'. '+esc(h.title)+'</b>'+(ls.length?ls.map(function(l){return '<div class="les" data-a="play" data-id="'+l.id+'"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><span>'+(done[l.id]?'✅':'')+'</span></div>'}).join(''):'<div class="les"><small style="color:var(--mut)">'+(ac?x('ক্লাস শীঘ্রই আসছে','Lessons coming soon'):x('🔒 এনরোল করলে ক্লাস দেখা যাবে','🔒 Enroll to unlock lessons'))+'</small></div>')+'</div>'}).join('');
+sheet('<div class="cv" style="border-radius:16px;'+bg(c,g)+'">'+(c.img?'':esc(ln(c.t)))+'</div><h2 style="margin:12px 0 2px">'+esc(ln(c.t))+'</h2><small style="color:var(--mut)">👨‍🏫 '+esc(ln(c.i))+' • '+n(c.l)+' '+t('lessons')+' • '+n(c.h)+x(' ঘণ্টা',' hrs')+'</small><p style="font-size:14px;margin:8px 0">'+esc(c.desc)+'</p><h2 style="margin:10px 0 4px">'+t('syl')+'</h2>'+body+
+'<button class="btn" data-a="'+(c.p&&ac?'none':c.p?'addc':'enr')+'" data-id="'+c.id+'">'+(c.p?(ac?'✓ '+x('এনরোল করা আছে','Enrolled'):(ic?'✓ ':'')+t('add')+' • '+money(c.p)):t('enroll'))+'</button>')}
+function play(id){var l=LS[id];if(!l)return;sheet('<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/'+esc(l.youtube_id)+'?rel=0&modestbranding=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><h2 style="margin:12px 0 4px">'+esc(l.title)+'</h2><p style="color:var(--mut);font-size:14px;margin-bottom:12px">'+esc(l.description)+'</p><button class="btn" data-a="done" data-id="'+id+'">'+(done[id]?'✅ ':'✓ ')+x('ক্লাস সম্পন্ন','Mark as completed')+'</button>')}
+function adLoad(cb){sb.from('courses').select('*,chapters(*,lessons(*))').order('id').then(function(r){AD=r.data||[];cb()})}
+function adShow(){var c=AD.find(function(q){return q.id==ADV.cid})||{},h,chs=(c.chapters||[]).slice().sort(srt);
+if(ADV.v=='list')h='<h2 style="margin-top:0">⚙️ কোর্স ম্যানেজমেন্ট</h2><button class="btn" data-a="adedit" data-id="0">+ নতুন কোর্স</button><div style="height:10px"></div>'+AD.map(function(k){return '<div class="card row"><div style="min-width:0"><b>'+esc(k.title_bn||k.title_en)+'</b><br><small>'+(k.published?'🟢 Published':'⚪ Draft')+' • ৳'+k.price+'</small></div><button class="tag" data-a="adopen" data-id="'+k.id+'">খুলুন</button></div>'}).join('');
+else if(ADV.v=='edit')h='<h2 style="margin-top:0">'+(ADV.cid?'কোর্স এডিট':'নতুন কোর্স')+'</h2>'+inp('tb','text','কোর্সের নাম (বাংলা)',c.title_bn)+inp('te','text','Course title (English)',c.title_en)+'<select class="fi" id="cat">'+CATS.map(function(k,i){return '<option value="'+(i+1)+'"'+(c.category_id==i+1?' selected':'')+'>'+k[1]+'</option>'}).join('')+'</select>'+inp('pr','number','দাম (টাকা, ফ্রি হলে ০)',c.price)+inp('ins','text','শিক্ষকের নাম',c.instructor_name)+inp('ll','text','মোট ক্লাস (যেমন ৬০+)',c.lessons_label)+inp('hl','text','মোট ঘণ্টা (যেমন ১০০+)',c.hours_label)+inp('cv','text','কভার ছবির লিংক',c.cover_url)+inp('ds','text','কোর্সের বিবরণ',c.description)+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="pb"'+(c.published?' checked':'')+'> প্রকাশিত (Published)</label><button class="btn" data-a="adsave">সংরক্ষণ করুন</button>'+(ADV.cid?'<button class="btn o" style="margin-top:8px;color:#dc2626" data-a="adcdel">কোর্স মুছুন</button>':'')+'<p><button class="tag" data-a="adback">← ফিরে যান</button></p>';
+else h='<h2 style="margin-top:0">'+esc(c.title_bn)+'</h2><div class="row" style="margin-bottom:10px"><button class="tag" data-a="adback">← সব কোর্স</button><button class="tag" data-a="adedit" data-id="'+c.id+'">✏️ কোর্স এডিট</button></div>'+chs.map(function(ch){return '<div class="card"><div class="row"><b>'+esc(ch.title)+'</b><button class="tag" data-a="adchdel" data-id="'+ch.id+'">✕</button></div>'+(ch.lessons||[]).slice().sort(srt).map(function(l){return '<div class="les"><span>▶️</span><span style="flex:1">'+esc(l.title)+'</span><button class="tag" data-a="adldel" data-id="'+l.id+'">✕</button></div>'}).join('')+'</div>'}).join('')+'<div class="card"><b>+ নতুন অধ্যায়</b>'+inp('cn','text','অধ্যায়ের নাম')+'<button class="btn o" data-a="adch">অধ্যায় যোগ করুন</button></div>'+(chs.length?'<div class="card"><b>+ নতুন ভিডিও ক্লাস</b><select class="fi" id="lc">'+chs.map(function(ch){return '<option value="'+ch.id+'">'+esc(ch.title)+'</option>'}).join('')+'</select>'+inp('lt','text','ক্লাসের নাম')+inp('ly','text','YouTube লিংক')+inp('ld','text','বিবরণ (ঐচ্ছিক)')+'<label style="display:block;margin-bottom:10px"><input type="checkbox" id="lp"> ফ্রি প্রিভিউ</label><button class="btn" data-a="adl">ক্লাস যোগ করুন</button></div>':'');
+sheet(h)}
+document.addEventListener('click',function(e){
+var el=e.target.closest('[data-a]');if(!el)return;var a=el.dataset.a,id=+el.dataset.id;
+if(a=='play')return play(id);
+if(['done','adm','adopen','adedit','adsave','adback','adcdel','adch','adchdel','adl','adldel'].indexOf(a)<0||!sb)return;
+function ok(go){return function(r){if(r.error)return toast(r.error.message);if(go)ADV=go;loadAll();adLoad(adShow)}}
+if(a=='done'){if(!user)return authSheet('in');sb.from('progress').upsert({lesson_id:id,completed:true}).then(function(r){if(r.error)return toast(r.error.message);done[id]=1;closeS();toast('✅')})}
+else if(a=='adm'){ADV={v:'list'};adLoad(adShow)}
+else if(a=='adopen'){ADV={v:'course',cid:id};adShow()}
+else if(a=='adedit'){ADV={v:'edit',cid:id||null};adShow()}
+else if(a=='adback'){ADV={v:'list'};adShow()}
+else if(a=='adsave'){var row={title_bn:v('tb'),title_en:v('te'),category_id:+v('cat'),price:+v('pr')||0,instructor_name:v('ins'),lessons_label:v('ll'),hours_label:v('hl'),cover_url:v('cv')||null,description:v('ds'),published:document.getElementById('pb').checked};
+if(!row.title_bn)return toast('কোর্সের নাম দিন');var cid=ADV.cid;
+(cid?sb.from('courses').update(row).eq('id',cid):sb.from('courses').insert(row)).then(ok(cid?{v:'course',cid:cid}:{v:'list'}))}
+else if(a=='adcdel'){if(confirm('কোর্সটি মুছবেন? সব অধ্যায় ও ক্লাসও মুছে যাবে।'))sb.from('courses').delete().eq('id',ADV.cid).then(ok({v:'list'}))}
+else if(a=='adch'){var tt=v('cn');if(!tt)return toast('অধ্যায়ের নাম দিন');var c=AD.find(function(q){return q.id==ADV.cid});sb.from('chapters').insert({course_id:ADV.cid,title:tt,sort:(c.chapters||[]).length+1}).then(ok())}
+else if(a=='adchdel'){if(confirm('অধ্যায়টি ও তার সব ক্লাস মুছবেন?'))sb.from('chapters').delete().eq('id',id).then(ok())}
+else if(a=='adl'){var yt=ytId(v('ly')),ch=+v('lc');if(!v('lt'))return toast('ক্লাসের নাম দিন');if(!yt)return toast('সঠিক YouTube লিংক দিন');var cc=AD.find(function(q){return q.id==ADV.cid}).chapters.find(function(q){return q.id==ch});
+sb.from('lessons').insert({chapter_id:ch,title:v('lt'),youtube_id:yt,description:v('ld'),is_preview:document.getElementById('lp').checked,sort:(cc.lessons||[]).length+1}).then(ok())}
+else if(a=='adldel'){if(confirm('ক্লাসটি মুছবেন?'))sb.from('lessons').delete().eq('id',id).then(ok())}
+});
+loadAll();
 
 render();
 </script>
