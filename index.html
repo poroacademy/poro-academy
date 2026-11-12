@@ -309,7 +309,8 @@ function simpleMath(t){return t
 .replace(/(?:sqrt|√)\(([^()]*)\)/g,'√<span style="text-decoration:overline">$1</span>')
 .replace(/\^\(([^()]*)\)/g,'<sup>$1</sup>').replace(/\^([\-−]?[0-9০-৯]+(?:\.[0-9০-৯]+)?|[\-−]?[A-Za-z][A-Za-z0-9]*)/g,'<sup>$1</sup>')
 .replace(/_\(([^()]*)\)/g,'<sub>$1</sub>').replace(/_([A-Za-z0-9০-৯]+)/g,'<sub>$1</sub>')}
-function mt(t){return String(t==null?'':t).split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\([\s\S]+?\\\))/).map(function(p,i){return i%2?esc(p):simpleMath(esc(p))}).join('').replace(/\n/g,'<br>')}
+function autoTex(t){if(/\$|\\\(/.test(t)||!/\\[A-Za-z]/.test(t))return t;return t.replace(/[^ঀ-৿\n]*\\[A-Za-z]+[^ঀ-৿\n]*/g,function(m){var r=m.match(/^(\s*)([\s\S]*?)([\s,।?]*)$/);return r[1]+'\\('+r[2]+'\\)'+r[3]})}
+function mt(t){return autoTex(String(t==null?'':t)).split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\([\s\S]+?\\\))/).map(function(p,i){return i%2?esc(p):simpleMath(esc(p))}).join('').replace(/\n/g,'<br>')}
 function mathR(){var e=document.querySelector('.sh');if(e&&window.renderMathInElement){try{renderMathInElement(e,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],throwOnError:false})}catch(x){}}}
 var _sh5=sheet;sheet=function(h){_sh5(h);mathR()};
 function pct(a,b){return b?Math.round(a*100/b):0}
